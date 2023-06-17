@@ -147,23 +147,18 @@ export class BotFlowComponent implements OnDestroy, AfterViewInit {
       // this.selectRestButtons("delete")
     } else {
       this.allAddButtons.forEach((element: any) => {
-        // this.addButtonsClone.push(element.cloneNode(true));
         element.classList.add("enablePointerEvents");
 
         this.addEvent(element, 'click', (event: Event) => {
-          // this.renderer.listen(element, 'click', (event: any) => this.selectButton(event));
           event.stopPropagation();
           this.selectButtonClicked(event);
         }, true);
       });
-      // this.selectRestButtons("add")
     }
-    //   element.addEventListener("click", (event: any) => this.selectButton(event), true);
-
     this.stepper.next();
   }
 
-  selectButtonClicked(event: any): any {
+  selectButtonClicked(event: any): any {//if either a delete or add button is clicked then add the green border around it
     if (event.target.classList.contains("delete")) {
       event.target.classList.add("selectButtonUser");
       this.selectedDeleteButton.push(event.target)
@@ -175,21 +170,21 @@ export class BotFlowComponent implements OnDestroy, AfterViewInit {
     }
   }
 
-  inputText() {
+  inputText() {//show the input text field 
     if (this.allSelectedInputs.length) {
       this.inputClicked = true;
     }
   }
 
-  inputTextChange($event: any) {
+  inputTextChange($event: any) {//change all the inputs values on change
     this.allInputs.forEach((input: any) => {
       input.value = $event;
     })
   }
 
 
-  selectRestButtons(mode: string) {
-    if (mode == "add") {
+  selectRestButtons(mode: string) {//when a button is selected then select the rest of the buttons and highlight them with a blue border
+    if (mode == "add") {//perform the operations on add button arrays
       this.allAddButtons.forEach(((item: any) => {
         if (!item.classList.contains('selectButtonUser')) {
           this.botSelectedButtons.push(item);
@@ -199,7 +194,7 @@ export class BotFlowComponent implements OnDestroy, AfterViewInit {
         item.classList.add("selectButtonBot");
       });
 
-    } else {
+    } else {//if mode is delete perform them on delete button arrays
       this.allDeleteButtons.forEach(((item: any) => {
         if (!item.classList.contains('selectButtonUser')) {
           this.botSelectedDeleteButtons.push(item);
