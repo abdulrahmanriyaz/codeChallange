@@ -1,0 +1,32 @@
+.mat-stepper-horizontal {
+  //normally I would not use a global class like this but since this is not a real app
+  margin-top: 8px;
+}
+
+::ng-deep .mat-horizontal-stepper-header {
+  //normally I would not use a global class like this but since this is not a real app
+  pointer-events: none !important;
+}
+
+.buttonAction {
+  height: 150px;
+  width: 250px;
+  background-color: whitesmoke;
+  padding: 20px;
+  text-align: center;
+  cursor: pointer;
+}
+
+.botButtons {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.botButtons>button {
+  margin-right: 15px;
+}
+
+.inputText {
+  min-width: 350px;
+  border: 1px solid black;
+}
