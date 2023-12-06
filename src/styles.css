@@ -290,11 +290,11 @@ ul.todo-list li .delete:after {
 }
 
 .userSelectedBorder {
-  border: 1px solid green;
+  border: 1px solid green !important;
 }
 
 .botSelectedBorder {
-  border: 1px solid blue;
+  border: 2px solid blue !important;
 }
 
 .disablePointerEvents {
@@ -310,13 +310,18 @@ p {
 }
 
 .selectButtonBot {
-  border: 3px solid blue;
+  border: 3px solid blue !important;
 }
 
 .enablePointerEvents {
   pointer-events: all;
 }
 
-.disableDeleteButton {
+.disableButton {
   background-color: #ddd !important;
+  pointer-events: visible;
+}
+
+.highlight {
+  border: 2px dotted #2fb89a !important;
 }

@@ -1,42 +1,29 @@
-<mat-accordion>
-    <mat-expansion-panel>
-        <mat-expansion-panel-header (click)="panelOpened()">
-            <mat-panel-title>
-                Bot flow
-            </mat-panel-title>
+<mat-accordion class="ignore">
+    <mat-expansion-panel (opened)="panelOpened()" (closed)="clearSelections()">
+        <mat-expansion-panel-header  [collapsedHeight]="'90px'" >
         </mat-expansion-panel-header>
 
         <mat-stepper [linear]="isLinear" #stepper>
             <mat-step>
                 <ng-template matStepLabel>Please select at least 2 elements</ng-template>
                 <div>
-                    <ng-container *ngIf="allSelectedInputs.length>=1">
-                        <p *ngIf="!botSelectedInputs.length;else botSelectedData">You have selected
-                            {{allSelectedInputs.length}}</p>
-                        <ng-template #botSelectedData>
-                            <p>Great! You selected {{allSelectedInputs.length}}, We predicted
-                                {{botSelectedInputs.length}} additional element(s)</p>
-                            <p>In total {{botSelectedInputs.length + allSelectedInputs.length}}
-                                elements are selected.</p>
-                        </ng-template>
-                    </ng-container>
+                    <ng-container *ngIf="activeSelections.length>=1">
+                        <p *ngIf="!botActiveSelections.length;else botSelectedData">You have selected
+                            {{activeSelections.length}}</p>
 
-                    <ng-container *ngIf="allSelectedTasks.length>=1">
-                        <p *ngIf="!botSelectedTasks.length;else botSelected">You have selected
-                            {{allSelectedTasks.length}}</p>
-                        <ng-template #botSelected>
-                            <p>Great! You selected {{allSelectedTasks.length}}, We predicted
-                                {{botSelectedTasks.length}} additional element(s)</p>
-                            <p>In total {{botSelectedTasks.length + allSelectedTasks.length}}
+                        <ng-template #botSelectedData>
+                            <p>Great! You selected {{activeSelections.length}}, We predicted
+                                {{botActiveSelections.length}} additional element(s)</p>
+                            <p>In total {{botActiveSelections.length + activeSelections.length}}
                                 elements are selected.</p>
                         </ng-template>
+
                     </ng-container>
-                    <p *ngIf="!allSelectedTasks.length && !allSelectedInputs.length">You have selected 0</p>
 
                     <div class="botButtons">
-                        <button color="primary" [disabled]="allSelectedInputs.length < 2 && allSelectedTasks.length < 2"
-                            mat-raised-button matStepperNext>Next</button>
-                        <button color="warn" mat-raised-button (click)="stepper.reset()">Reset</button>
+                        <button color="primary" [disabled]="activeSelections.length < 2" mat-raised-button
+                            matStepperNext>Next</button>
+                        <button color="warn" mat-raised-button (click)="resetStepper()">Reset</button>
                     </div>
                 </div>
             </mat-step>
@@ -50,42 +37,54 @@
                         <p>Allows you to click a button for each element</p>
                     </div>
 
-                    <div class="buttonAction" (click)="inputText()" style="margin-right:15px;">
+                    <div class="buttonAction" (click)="enterInputText()" style="margin-right:15px;">
                         <h3>Input Text</h3>
                         <p>Allows you to input text for each element</p>
                     </div>
 
-                    <div id="ds" class="buttonAction" (click)="runBot()">
+                    <div id="ds" class="buttonAction" (click)="markAllTasks()">
                         <h3>Mark all tasks</h3>
                         <p>Allows you to mark all selected tasks as done</p>
                     </div>
                 </div>
-                <input placeholder="Enter text to replace" *ngIf="inputClicked" type="text" class="inputText"
-                    [(ngModel)]="inputTextString" matInput (ngModelChange)="inputTextChange($event)">
+                <div *ngIf="inputClicked" style="margin-top:10px ;">
+                    Please select the inputs
+                    <p *ngIf="!activeSelections.length;else botSelectedData">You have selected
+                        {{activeSelections.length}}</p>
+
+                    <ng-template #botSelectedData>
+                        <p>Great! You selected {{activeSelections.length}}, We predicted
+                            {{botActiveSelections.length}} additional element(s)</p>
+                        <p>In total {{botActiveSelections.length + activeSelections.length}}
+                            elements are selected.</p>
+                        <input placeholder="Enter text to replace" *ngIf="inputClicked" type="text" class="inputText"
+                            [(ngModel)]="inputTextString" matInput (ngModelChange)="inputTextChange($event)">
+                    </ng-template>
+                </div>
                 <div class="botButtons">
-                    <button color="accent" mat-raised-button (click)="stepper.reset()">Reset</button>
+                    <button color="accent" mat-raised-button (click)="resetStepper()">Reset</button>
                 </div>
             </mat-step>
+
             <mat-step label="Click a button">
-                <ng-container *ngIf="selectedAddButtons.length >= 1">
-                    <p *ngIf="selectedAddButtons.length">Great! You selected {{selectedAddButtons.length}}, We predicted
-                        {{botSelectedButtons.length}} additional element(s)</p>
-                    <p>In total {{botSelectedButtons.length + selectedAddButtons.length}}
-                        elements are selected.</p>
+                <ng-container *ngIf="activeSelections.length>=1">
+                    <p *ngIf="!botSelectedButtons.length;else botSelectedData">You have selected
+                        {{activeSelections.length}}</p>
+
+                    <ng-template #botSelectedData>
+                        <p>Great! You selected {{activeSelections.length}}, We predicted
+                            {{botSelectedButtons.length}} additional element(s)</p>
+                        <p>In total {{botSelectedButtons.length + activeSelections.length}}
+                            elements are selected.</p>
+                    </ng-template>
+
                 </ng-container>
 
-                <ng-container *ngIf="selectedDeleteButton.length >= 1">
-                    <p *ngIf="selectedDeleteButton.length">Great! You selected {{selectedDeleteButton.length}}, We
-                        predicted
-                        {{botSelectedDeleteButtons.length}} additional element(s)</p>
-                    <p>In total {{botSelectedDeleteButtons.length + selectedDeleteButton.length}}
-                        elements are selected.</p>
-                </ng-container>
 
                 <div class="botButtons">
                     <!-- <button color="warn" mat-raised-button >RunBot</button> -->
-                    <button color="accent" mat-raised-button (click)="stepper.previous()">Select Another action</button>
-                    <button color="primary" mat-raised-button (click)="runBot()">Run Bot</button>
+                    <button color="accent" mat-raised-button (click)="resetStepper()">Reset</button>
+                    <button color="primary" mat-raised-button (click)="runn()">Run Bot</button>
                 </div>
             </mat-step>
         </mat-stepper>

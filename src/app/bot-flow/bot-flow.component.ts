@@ -1,267 +1,117 @@
-import { AfterViewInit, Component, ElementRef, EventEmitter, OnDestroy, OnInit, Output, Renderer2, ViewChild } from '@angular/core';
-import { FormBuilder, Validators } from '@angular/forms';
-import { MatStepper } from '@angular/material/stepper';
-import { AppComponent } from '../app.component';
+import { Component, ElementRef, EventEmitter, HostListener, Output, Renderer2, ViewChild } from '@angular/core';
 
 @Component({
   selector: 'app-bot-flow',
   templateUrl: './bot-flow.component.html',
   styleUrls: ['./bot-flow.component.scss']
 })
-export class BotFlowComponent implements OnDestroy, AfterViewInit {
+export class BotFlowComponent {
   @Output("addTask") addTask: EventEmitter<any> = new EventEmitter();
+  @ViewChild("stepper") stepper: any;
   //variables that have selected in their name contain elements the user clicked on
   //variables that the bot automatically selected will have botselected in their name
-  panelOpenState = false;
   isLinear = true;
-  allAddButtons: any = [];
-  allSelectedInputs: any = [];
-  allSelectedTasks: any = [];
-  botSelectedInputs: any = [];
+  activeSelections: any = [];
+  botActiveSelections: any = [];
   botSelectedButtons: any = [];
-  allInputs: Array<HTMLElement> = [];
-  noOptionSelected = true;
-  selectedAddButtons: Array<HTMLElement> = [];
-  @ViewChild("stepper") stepper: any;
-  globalInstance: any;
   _eventHandlers: any = {};
-  allTasks: Array<HTMLElement> = [];
-  botSelectedTasks: any = [];
-  selectedDeleteButton: any = [];
-  allDeleteButtons: any = [];
-  botSelectedDeleteButtons: any = [];
-  inputTextString: string = ""
+  inputTextString: string = "";
   inputClicked = false;
+  hoveredElements: Array<HTMLElement> = [];
+  highlightedElement: HTMLElement | null = null;
+  selectionActive: boolean = false; //whether selection is active or not
+  allSelectedInputs: any[] = [];
+  stepperLabel: any;
 
-  constructor() { }
 
-  ngAfterViewInit() {
-    this.allAddButtons = document.querySelectorAll(".btn-add");//store all add task buttons
+  constructor(private renderer: Renderer2, private el: ElementRef) { }
+
+
+
+
+  panelOpened() {//if panel is opened reset the stepper
+    this.resetStepper()
   }
 
-  ngOnDestroy(): void {
+  enterInputText() {// input text child action is selected
+    this.stepperLabel = 'Select the input fields';
+    this.removeHighlight();
+    this.inputClicked = true;
+    this.selectionActive = true;
+    this.activeSelections = [];
+    this.botActiveSelections = [];
   }
 
 
-  disableAddButtons() {//disable or enable all buttons depending on the panelOpenState
-    this.panelOpenState = !this.panelOpenState;
-    if (this.panelOpenState) {
-      this.allAddButtons.forEach((element: any) => {
-        element.classList.remove("active");
-      });
-      this.allDeleteButtons.forEach((element: any) => {
-        element.classList.add("disableDeleteButton", "disablePointerEvents");
-      })
-    } else {
-      this.allAddButtons.forEach((element: any) => {
-        element.classList.add("active");
-      });
-      this.allDeleteButtons.forEach((element: any) => {
-        element.classList.remove("disableDeleteButton", "disablePointerEvents");
-      });
-      this.allInputs.forEach((element: any) => {
-        this.removeAllEvents(element, 'click')
-      });
-      this.allInputs = []
-      this.allSelectedInputs = [];
-      this.botSelectedInputs = []
-    }
-  }
-
-  panelOpened() {//if panel has opened disable all add buttons
-    this.stepper.reset();
-    this.allInputs = Array.from(document.querySelectorAll('.input-todo'));
-    this.allInputs.forEach((element: any) => {//add event listner to allInputs so we can highlight them upon selection
-      this.addEvent(element, 'click', (event: Event) => {
-        this.selectInput(element);
-      }, false);
-    });
-    this.allDeleteButtons = document.querySelectorAll(".delete");//store all add task buttons
-    this.allTasks = Array.from(document.querySelectorAll('.todo-list > li'));
-    this.allTasks.forEach((element: any) => {
-      element.childNodes.forEach((item: any) => {
-        this.addEvent(item, 'click', (event: Event) => {
-          if (!item.classList.contains('delete')) {
-            event.stopPropagation();
-            this.selectTasks(event);
-          }
-        }, true);
-      })
+  buttonFunctionClicked() {//select button option is clicked
+    this.stepperLabel = 'Select the buttons';
+    const buttons = document.querySelectorAll(".btn");
+    buttons.forEach(button => {
+      button.classList.remove("active");
+      button.classList.add("disableButton");
     })
-    this.disableAddButtons();
-  }
-
-  selectInput(event: any) {//add a green border when an input field is selected
-    if (this.panelOpenState) {
-      const index = this.allSelectedInputs.findIndex((item: any) => item.value == event.value);
-      if (index === -1) {//dont allow adding the same input field twice
-        this.allSelectedInputs.push(event);
-        event.parentElement.classList.add("userSelectedBorder");
-      }
-      if (this.allSelectedInputs.length === 2) {//if at least 2 input fields are selected change the text and select the rest automatically
-        this.gotoAction("input");
-      }
-    }
-  }
-
-  selectTasks(event: any) {//add a green border when
-    if (this.panelOpenState) {
-      if (!event.target.classList.contains("userSelectedBorder"))
-        this.allSelectedTasks.push(event.target);
-      event.target.parentElement.classList.add("userSelectedBorder");
-    }
-    if (this.allSelectedTasks.length === 2) {//if at least 2 input fields are selected change the text and select the rest automatically
-      this.gotoAction("tasks");
-    }
-  }
-
-  gotoAction(mode: string) {//select the rest of input fields automatically
-    if (mode == 'tasks') {
-      this.allTasks.forEach(((item: any) => {
-        if (!item.classList.contains('userSelectedBorder')) {
-          item.classList.add("botSelectedBorder");
-          this.botSelectedTasks.push(item.childNodes[0]);
-        }
-      }));
-    } else {
-      if (this.allSelectedInputs.length < this.allInputs.length) {
-        this.botSelectedInputs = this.allInputs.filter((ar: any) => !this.allSelectedInputs.find((rm: any) => (rm.value === ar.value)))
-        this.botSelectedInputs.forEach((item: any) => {//add the blue border class to the auto selected input fields
-          item.parentElement.classList.add("botSelectedBorder");
-        })
-      }
-    }
-  }
-
-
-  buttonFunctionClicked() {//select button option is clicked then change text and add event listener so we can select the buttons
-    if (this.allSelectedTasks.length) {
-      this.allDeleteButtons.forEach((element: any) => {
-        // this.addButtonsClone.push(element.cloneNode(true));
-        element.classList.remove("disablePointerEvents");
-        this.addEvent(element, 'click', (event: Event) => {
-          event.stopPropagation();
-          this.selectButtonClicked(event);
-        }, true);
-      });
-      // this.selectRestButtons("delete")
-    } else {
-      this.allAddButtons.forEach((element: any) => {
-        element.classList.add("enablePointerEvents");
-
-        this.addEvent(element, 'click', (event: Event) => {
-          event.stopPropagation();
-          this.selectButtonClicked(event);
-        }, true);
-      });
-    }
+    this.selectionActive = true;
+    this.activeSelections = []
     this.stepper.next();
   }
 
-  selectButtonClicked(event: any): any {//if either a delete or add button is clicked then add the green border around it
-    if (event.target.classList.contains("delete")) {
-      event.target.classList.add("selectButtonUser");
-      this.selectedDeleteButton.push(event.target)
-      this.selectRestButtons("delete")
-    } else {
-      event.target.classList.add("selectButtonUser");
-      this.selectedAddButtons.push(event.target)
-      this.selectRestButtons("add");
+  runn() {//run the click function of the selected buttons
+    if (this.botSelectedButtons.length) {
+      //use tagName + all the classes to select the rest of the similar buttons
+      const remainingElementsQuery = this.botSelectedButtons[0].tagName.toLowerCase() + '.' + this.botSelectedButtons[0].classList.value.split(" ").slice(0, -1);
+      const extraEl = document.querySelectorAll(remainingElementsQuery);
+      this.clearSelections();
+      extraEl.forEach((item: any) => {
+        if (this.inputClicked) {//if input text was changed then use output function to add the tasks
+          this.addTask.emit(this.inputTextString);
+        } else {
+          item.click();
+        }
+        item.classList.remove("disableButton");
+        item.classList.add("active");
+      });
+      this.resetStepper();
+      this.inputClicked = false;
+      this.inputTextString = '';
     }
   }
 
-  inputText() {//show the input text field 
-    if (this.allSelectedInputs.length) {
-      this.inputClicked = true;
-    }
+  resetStepper() {// reset the stepper to the first step
+    this.stepper.reset();
+    this.selectionActive = true;
+    this.removeHighlight()
+    this.activeSelections = [];
+    this.botSelectedButtons = [];
+    this.botActiveSelections = [];
   }
 
   inputTextChange($event: any) {//change all the inputs values on change
-    this.allInputs.forEach((input: any) => {
+    const remainingElementsQuery = this.botActiveSelections[0].tagName.toLowerCase() + '.' + this.botActiveSelections[0].classList.value.split(" ").slice(0, -1);
+    const extraEl = document.querySelectorAll(remainingElementsQuery);
+    extraEl.forEach((input: any) => {
       input.value = $event;
     })
   }
 
-
-  selectRestButtons(mode: string) {//when a button is selected then select the rest of the buttons and highlight them with a blue border
-    if (mode == "add") {//perform the operations on add button arrays
-      this.allAddButtons.forEach(((item: any) => {
-        if (!item.classList.contains('selectButtonUser')) {
-          this.botSelectedButtons.push(item);
-        }
-      }));
-      this.botSelectedButtons.forEach((item: any) => {//add the blue border class to the auto selected buttons fields
-        item.classList.add("selectButtonBot");
-      });
-
-    } else {//if mode is delete perform them on delete button arrays
-      this.allDeleteButtons.forEach(((item: any) => {
-        if (!item.classList.contains('selectButtonUser')) {
-          this.botSelectedDeleteButtons.push(item);
-        }
-      }));
-      this.botSelectedDeleteButtons.forEach((item: any) => {//add the blue border class to the auto selected buttons fields
-        item.classList.add("selectButtonBot");
-      });
+  markAllTasks() {
+    const isList = this.botActiveSelections[0]?.tagName.toLowerCase() == 'li'
+    const childNode = isList ? this.botActiveSelections[0]?.childNodes[1] : this.botActiveSelections[0];
+    const childClassList = childNode.classList.value.split(" ");
+    let allSimilarChilds;
+    if (childClassList.length > 1) {
+      allSimilarChilds = childNode.tagName.toLowerCase() + '.' + childClassList;
+    } else {
+      allSimilarChilds = childNode.tagName.toLowerCase();
     }
+    const extraEl = document.querySelectorAll(allSimilarChilds);
+    this.clearSelections();
+    extraEl.forEach((child: any) => {
+      child.click();
+    });
+    this.removeHighlight();
+    this.botActiveSelections = [];
+    this.activeSelections = [];
   }
-
-  runBot() {
-    if (this.selectedAddButtons.length) {//if add button is selected and run is clicked
-      let buttons = [...this.selectedAddButtons, ...this.botSelectedButtons];
-      this.allAddButtons.forEach((element: any) => {
-        element.classList.add("active")
-      })
-      buttons.forEach((element: any) => {
-        this.removeAllEvents(element, "click");
-        element.classList.remove("enablePointerEvents", "selectButtonBot", "selectButtonUser");
-        if (this.inputClicked) {
-          this.addTask.emit(this.inputTextString);
-        } else {
-          element.click();
-        }
-      });
-      if (this.inputClicked) {
-        this.allTasks = Array.from(document.querySelectorAll('.todo-list > li'));
-        this.inputClicked = false;
-      }
-      this.allInputs.forEach((input: any) => {
-        input.parentElement.classList.remove("userSelectedBorder", "botSelectedBorder");
-      });
-      this.selectedAddButtons = [];
-      this.botSelectedButtons = [];
-    }
-
-    if (this.selectedDeleteButton.length) {//if delete button is selected and run is clicked remove tasks
-      let buttons = [...this.selectedDeleteButton, ...this.botSelectedDeleteButtons];
-      this.allDeleteButtons.forEach((element: any) => {
-        element.classList.remove("disableDeleteButton")
-      })
-      buttons.forEach((element: any) => {
-        this.removeAllEvents(element, "click");
-        element.click();
-      });
-      this.selectedDeleteButton = [];
-      this.botSelectedDeleteButtons = [];
-    }
-
-    if (this.allSelectedTasks.length && !this.selectedDeleteButton.length) {//if mark all elements is selected
-      let buttons = [...this.allSelectedTasks, ...this.botSelectedTasks];
-      this.allDeleteButtons.forEach((element: any) => {
-        element.classList.remove("disableDeleteButton")
-      })
-      buttons.forEach((element: any) => {
-        this.removeAllEvents(element, "click");
-        element.click();
-      });
-    }
-    this.allSelectedTasks = [];
-    this.botSelectedTasks = [];
-    this.allTasks.forEach(item => {
-      item.classList.remove("userSelectedBorder", "botSelectedBorder");
-    })
-  }
-
 
 
   //Anonymous functions in event listners cant be removed so we collect them in an object
@@ -293,6 +143,101 @@ export class BotFlowComponent implements OnDestroy, AfterViewInit {
       }
     }
   }
+
+  handleSelection(cevent: Event) {
+    const clickedElement = cevent.target as HTMLElement;
+    // dont proceed further if selection mode is inactive or if the clicked element already has a border dont proceed further
+    if (!this.selectionActive || clickedElement.classList.contains('userSelectedBorder')) {
+      return;
+    }
+
+    if (this.highlightedElement) { // remove the dotted highlight
+
+      this.renderer.removeClass(this.highlightedElement, 'dottedHighlight');
+    }
+
+    this.activeSelections.push({
+      element: clickedElement,
+      tagName: clickedElement.tagName.toLocaleLowerCase()
+    });
+    clickedElement.classList.add('userSelectedBorder');
+
+
+
+    if (this.activeSelections.length < 2) {// if selections are more than 2 then add the remaining items else ignore
+      return;
+    }
+
+    const firstElement = this.activeSelections[0];
+    let remainingElementsQuery;
+    if (firstElement.element.classList.contains('userSelectedBorder') && firstElement.element.classList.length > 1) {
+      remainingElementsQuery = firstElement.tagName + '.' + firstElement.element.classList.value.split(" ").slice(0, -1);
+    } else {//for elements with no class we use the tagname to get them
+      remainingElementsQuery = firstElement.tagName;
+    }
+    const extraEl = document.querySelectorAll(remainingElementsQuery);
+    extraEl.forEach(item => {
+      if (!item.classList.contains('userSelectedBorder')) {
+        item.classList.add('botSelectedBorder');
+        this.selectionActive = false;
+        if (item.classList.contains('btn-add') || item.classList.contains('delete')) {
+          this.botSelectedButtons.push(item)
+        } else {
+          this.botActiveSelections.push(item);
+        }
+      }
+    });
+  }
+
+  @HostListener('document:mousemove', ['$event'])
+  handleMouseMove(event: MouseEvent): void {
+    //if the panel is opened then add a hover border over elements
+    if (this.selectionActive) {
+      const el: HTMLElement = event.target as HTMLElement;
+      if (this.el.nativeElement.contains(el) || el.classList.contains("botSelectedBorder")) {
+        return;
+      }
+      this.addEvent(el, 'click', (ev: Event) => {//use addEvent function to add the custom click event so we can remove it once done
+        if (!this.el.nativeElement.contains(ev.target)) {
+          ev.stopImmediatePropagation();
+          this.handleSelection(ev);
+        }
+      }, true);
+
+      if (this.highlightedElement) {
+        this.renderer.removeClass(this.highlightedElement, 'dottedHighlight');
+        this.hoveredElements.push(this.highlightedElement);
+      }
+
+      // Add highlight to the currently hovered element
+      this.highlightedElement = document.elementFromPoint(event.clientX, event.clientY) as HTMLElement;
+      this.highlightElement(this.highlightedElement);
+    }
+  }
+
+  highlightElement(element: HTMLElement): void {
+    if (element) {
+      this.renderer.addClass(element, 'dottedHighlight');
+    }
+  }
+
+  clearSelections() {//remove all selection borders and custom events
+    this.hoveredElements.forEach(item => {
+      this.removeAllEvents(item, 'click');
+    });
+    this.removeHighlight();
+    this.selectionActive = false;
+  }
+
+
+  // Remove highlight from all elements
+  removeHighlight() {
+    const elements = document.querySelectorAll('.botSelectedBorder, .dottedHighlight, .userSelectedBorder');
+    elements.forEach((element) => {
+      element.classList.remove('botSelectedBorder', 'dottedHighlight', 'userSelectedBorder');
+    });
+  }
+
 
 }
 
